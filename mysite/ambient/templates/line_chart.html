@@ -1,0 +1,148 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <canvas id="lineChart" width="800" height="400"></canvas>
+
+    <script>
+        var ctx = document.getElementById('lineChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: JSON.parse('{{ timestamps|safe }}'),
+                datasets: [
+                    {
+                        label: 'Temperature',
+                        data: {{ temperatures|safe }},
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    },
+                    {
+                        label: 'Humidity',
+                        data: {{ humidities|safe }},
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    x: [{
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                        },
+                        distribution: 'linear',
+                    }],
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <style>
+        #chart-container {
+            margin: 0 auto; /* Căn giữa theo chiều ngang */
+            width: 80%; /* Đặt chiều rộng tùy thuộc vào nhu cầu của bạn */
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container">
+        <canvas id="lineChart" width="800" height="400"></canvas>
+    </div>
+
+    <script>
+        function updateChart() {
+            $.ajax({
+                url: '/line_chart/',  // Điều chỉnh URL theo đường dẫn của bạn
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            // Thêm dữ liệu mới vào mảng
+            myChart.data.labels.push(data.timestamps);
+            myChart.data.datasets[0].data.push(data.temperatures);
+            myChart.data.datasets[1].data.push(data.humidities);
+
+            // Giữ lại chỉ 60 phần tử
+            if (myChart.data.labels.length > 60) {
+                myChart.data.labels.shift();
+                myChart.data.datasets[0].data.shift();
+                myChart.data.datasets[1].data.shift();
+            }
+
+            // Cập nhật biểu đồ
+            myChart.update();
+        },
+        complete: function() {
+            // Thực hiện lại request sau một khoảng thời gian
+            setTimeout(updateChart, 1000);  // Cập nhật mỗi giây
+        }
+    });
+        }
+
+        var ctx = document.getElementById('lineChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{timestamps|safe}},
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        data: {{temperatures|safe}},
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    },
+                    {
+                        label: 'Humidity (%)',
+                        data: {{humidities|safe}},
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    x: [{
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            parser: 'YYYY-MM-DDTHH:mm:ss.SSSZ',
+                            tooltipFormat: 'll HH:mm:ss'    
+                        },
+                        distribution: 'linear',
+                        ticks: {
+                            max: 60  // Giữ lại tối đa 60 phần tử trên trục x
+                        }
+                    }],
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        updateChart();
+    </script>
+</body>
+</html>
