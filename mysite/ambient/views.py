@@ -10,16 +10,15 @@ from django.db.models import F
 from django.utils import timezone
 import pytz
 import json
+from django.http import JsonResponse
+import time
 
 #Create your views here.
 @api_view(['POST'])
 def addData(request):
-    record_count = dht22.objects.aggregate(count=Count('id'))['count']
-    LIMIT = 10000
-    if record_count < LIMIT:
-        serializer = ItemSerializer(data = request.data)
-        if serializer.is_valid():
-            serializer.save()
+    serializer = ItemSerializer(data = request.data)
+    if serializer.is_valid():
+        serializer.save()
         return Response(serializer.data)
     else:
         return Response("Ló Chim bùm")
@@ -27,7 +26,7 @@ def addData(request):
 
 
 def line_chart(request):
-    data = dht22.objects.annotate(date=TruncSecond('timestamp')).values('date').annotate(temperature=F('temperature'), humidity=F('humidity')).order_by('date')[:60]
+    data = dht22.objects.annotate(date=TruncSecond('timestamp')).values('date').annotate(temperature=F('temperature'), humidity=F('humidity')).order_by('date')
     for entry in data:
         entry['date'] = entry['date'].astimezone(pytz.timezone('Asia/Ho_Chi_Minh'))
     timestamps = [entry['date'].strftime('%Y-%m-%dT%H:%M:%S.%fZ') for entry in data]
@@ -35,15 +34,26 @@ def line_chart(request):
     temperatures = [entry['temperature'] for entry in data]
     humidities = [entry['humidity'] for entry in data]
 
-    return render(request, 'line_chart.html', {'timestamps': json.dumps(timestamps), 'temperatures': temperatures, 'humidities': humidities})
-# class SensorDataView(APIView):
-#     parser_classes = [JSONParser]
+    return render(request, 'line_chart.html', {'timestamps': timestamps, 'temperatures': temperatures, 'humidities': humidities})
 
-#     def post(self, request, *args, **kwargs):
-#         serializer = ItemSerializer(data=request.data)
+def data(request):
+    #data = dht22.objects.annotate(date=TruncSecond('timestamp')).values('date').annotate(temperature=F('temperature'), humidity=F('humidity')).order_by('date')
+    # dat = dht22.objects.latest()
+    # for entry in dat:
+    #     entry['date'] = entry['date'].astimezone(pytz.timezone('Asia/Ho_Chi_Minh'))
+    # timestamps = [entry['date'].strftime('%Y-%m-%dT%H:%M:%S.%fZ') for entry in data]
+    # #timestamps = [entry['date'].astimezone(timezone('Asia/Ho_Chi_Minh')) for entry in data]
+    # temperatures = [entry['temperature'] for entry in data]
+    # humidities = [entry['humidity'] for entry in data]
+    all_sensor_data = dht22.objects.all().order_by('-timestamp')[:20]
 
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response("Data received and saved.", status=status.HTTP_200_OK)
-#         else:
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # Lấy giá trị cụ thể từ dữ liệu
+    timestamps = [data.timestamp.astimezone(pytz.timezone('Asia/Ho_Chi_Minh')) for data in all_sensor_data]
+    temperatures = [data.temperature for data in all_sensor_data]
+    humidities = [data.humidity for data in all_sensor_data]
+
+    # Bây giờ bạn có thể sử dụng các giá trị này trong logic của mình
+    # Ví dụ: trả về chúng dưới dạng JSON
+    return JsonResponse({'timestamps': timestamps.pop(1), 'temperatures': temperatures, 'humidities': humidities})
+
+    return JsonResponse( {'timestamps': timestamps, 'temperatures': temperatures, 'humidities': humidities})

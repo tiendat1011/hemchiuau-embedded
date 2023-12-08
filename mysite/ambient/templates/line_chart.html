@@ -71,50 +71,50 @@
     </div>
 
     <script>
-        function updateChart() {
-            $.ajax({
-                url: '/line_chart/',  // Điều chỉnh URL theo đường dẫn của bạn
-        type: 'GET',
-        dataType: 'json',
-        success: function(data) {
-            // Thêm dữ liệu mới vào mảng
-            myChart.data.labels.push(data.timestamps);
-            myChart.data.datasets[0].data.push(data.temperatures);
-            myChart.data.datasets[1].data.push(data.humidities);
+    //     function updateChart() {
+    //         $.ajax({
+    //             url: '/data/',  // Điều chỉnh URL theo đường dẫn của bạn
+    //     type: 'GET',
+    //     dataType: 'json',
+    //     success: function(data) {
+    //         // Thêm dữ liệu mới vào mảng
+    //         myChart.data.labels.push(data.timestamps);
+    //         myChart.data.datasets[0].data.push(data.temperatures);
+    //         myChart.data.datasets[1].data.push(data.humidities);
 
-            // Giữ lại chỉ 60 phần tử
-            if (myChart.data.labels.length > 60) {
-                myChart.data.labels.shift();
-                myChart.data.datasets[0].data.shift();
-                myChart.data.datasets[1].data.shift();
-            }
+    //         // Giữ lại chỉ 60 phần tử
+    //         if (myChart.data.labels.length > 60) {
+    //             myChart.data.labels.shift();
+    //             myChart.data.datasets[0].data.shift();
+    //             myChart.data.datasets[1].data.shift();
+    //         }
 
-            // Cập nhật biểu đồ
-            myChart.update();
-        },
-        complete: function() {
-            // Thực hiện lại request sau một khoảng thời gian
-            setTimeout(updateChart, 1000);  // Cập nhật mỗi giây
-        }
-    });
-        }
+    //         // Cập nhật biểu đồ
+    //         myChart.update();
+    //     },
+    //     complete: function() {
+    //         // Thực hiện lại request sau một khoảng thời gian
+    //         setTimeout(updateChart, 1000);  // Cập nhật mỗi giây
+    //     }
+    // });
+    //     }
 
         var ctx = document.getElementById('lineChart').getContext('2d');
         var myChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: {{timestamps|safe}},
+                labels: [],
                 datasets: [
                     {
                         label: 'Temperature (°C)',
-                        data: {{temperatures|safe}},
+                        data: [],
                         borderColor: 'rgba(75, 192, 192, 1)',
                         borderWidth: 1,
                         fill: false
                     },
                     {
                         label: 'Humidity (%)',
-                        data: {{humidities|safe}},
+                        data: [],
                         borderColor: 'rgba(255, 99, 132, 1)',
                         borderWidth: 1,
                         fill: false
@@ -122,19 +122,22 @@
                 ]
             },
             options: {
-                maintainAspectRatio: false,
+                maintainAspectRatio: true,
                 scales: {
                     x: [{
                         type: 'time',
                         time: {
                             unit: 'day',
+                            autoSkip: true,
                             parser: 'YYYY-MM-DDTHH:mm:ss.SSSZ',
-                            tooltipFormat: 'll HH:mm:ss'    
+                            tooltipFormat: 'll HH:mm:ss',
+    
                         },
-                        distribution: 'linear',
                         ticks: {
-                            max: 60  // Giữ lại tối đa 60 phần tử trên trục x
-                        }
+                            maxRotation: 90, // Góc xoay tối đa của nhãn
+                            autoSkip: true,
+                            maxTicksLimit: 10, // Giới hạn tối đa số lượng nhãn
+                        },
                     }],
                     y: {
                         beginAtZero: true
@@ -142,7 +145,31 @@
                 }
             }
         });
-        updateChart();
+        
+        function fetchData() {
+            fetch('/data/')
+                .then(response => response.json())
+                .then(data => {
+                    // Update chart data
+                    myChart.data.labels.push(data.timestamps);
+                    myChart.data.datasets[0].data.push(data.temperatures);
+                    myChart.data.datasets[1].data.push(data.humidities);
+
+                    // Giữ lại chỉ 60 phần tử
+    
+
+                    // Cập nhật biểu đồ
+                    myChart.update();
+                });
+
+                    // Thực hiện lại sau mỗi giây
+                    setTimeout(fetchData, 2000);
+        }
+
+        // Bắt đầu fetch dữ liệu
+        fetchData();
+    
     </script>
+    <h1></h1>
 </body>
 </html>
