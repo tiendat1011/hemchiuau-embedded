@@ -4,13 +4,14 @@
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 
-#define DHTPIN 5     // Định nghĩa chân kết nối DHT22
+
+#define DHTPIN 14     // Định nghĩa chân kết nối DHT22
 #define DHTTYPE DHT22 // Loại cảm biến DHT
 
-const char* ssid = "iPorn";       // Tên của mạng Wi-Fi
-const char* password = "domapdjt";   // Mật khẩu Wi-Fi
-const char* serverAddress = "172.20.10.5"; // Địa chỉ server Django
-String apiPath = "192.168.2.6:8000/addData/";
+const char* ssid = "Dat 5G";       // Tên của mạng Wi-Fi
+const char* password = "08082006";   // Mật khẩu Wi-Fi
+const char* serverAddress = "192.168.2.6"; // Địa chỉ server Django IP;
+IPAddress IP;
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -24,6 +25,7 @@ void setup() {
     delay(100);
     Serial.println("Connecting to WiFi..");
   }
+  IP = WiFi.localIP();
   
   Serial.println("Connected to WiFi");
 }
@@ -33,6 +35,7 @@ void loop() {
 
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();
+  String device_name = "Rèm 1";
 
   if (isnan(humidity) || isnan(temperature)) {
     Serial.println("Failed vto read from DHT sensor");
@@ -40,12 +43,12 @@ void loop() {
   }
 
   // Tạo JSON payload
-  String data = "{\"temperature\":" + String(temperature) + ", \"humidity\":" + String(humidity) + "}";
+   String data = "{\"temperature\":" + String(temperature) + ", \"humidity\":" + String(humidity) + ", \"device_name\":\"" + device_name + "\", \"ipaddr\":\"" + IP.toString() + "\"}";
   Serial.println(data);
   //delay(2000);
 
   WiFiClient client;
-  if (client.connect(serverAddress, 8000)) {
+  if (client.connect(serverAddress, 3000)) {
     Serial.println("Connected to server");
     // HTTPClient http;
     // http.addHeader("Content-Type", "application/raw");
@@ -55,7 +58,7 @@ void loop() {
     client.print("POST ");
     client.print("/addData/");
     client.println(" HTTP/1.1");
-    client.println("Host: 172.20.10.5"); // Thay thế bằng tên miền hoặc địa chỉ IP của máy chủ
+    client.println("Host: 192.168.2.6"); // Thay thế bằng tên miền hoặc địa chỉ IP của máy chủ
     client.println("Content-Type: application/json");
     client.print("Content-Length: ");
     client.println(data.length());
